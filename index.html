@@ -21,7 +21,7 @@
     </div>
     <div class="container">
         <h3>rotationStatus</h3>
-        <a href="#" class="button secondary" id="initRotate">Initial Rotation</a>
+        <a href="#" class="button secondary" id="init">Initial Rotation</a>
         <a href="#" class="button secondary" id="choosing">Force Set Choosing</a>
         <a href="#" class="button secondary" id="chosen">Force Set Chosen</a>
     </div>
@@ -73,7 +73,7 @@
       document.getElementById('off').addEventListener('click', () => updateState('liveStatus', 'off'));
 
       // Attach event listeners
-      document.getElementById('initRotate').addEventListener('click', () => updateState('rotationStatus', 'init'));
+      document.getElementById('init').addEventListener('click', () => updateState('rotationStatus', 'init'));
       document.getElementById('choosing').addEventListener('click', () => updateState('rotationStatus', 'choosing'));
       document.getElementById('chosen').addEventListener('click', () => updateState('rotationStatus', 'chosen'));
 
@@ -102,48 +102,50 @@
         }
     });
 
-    onSnapshot(doc(db, "liveUtils", "liveStatus"), (doc) => {
-        const data = doc.data();
-        if (data && data.state) {
-            // First, remove active class from all buttons
-            document.querySelectorAll('.button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+    function removeActiveClass(buttonIds) {
+        buttonIds.forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) btn.classList.remove('active');
+        });
+    }
 
-            // Then, apply the active class to the corresponding button
-            const stateButtonIdMap = {
-                'live': 'live',
-                'intermission': 'intermission',
-                'rotation': 'rotation',
-                'off': 'off'
-            };
-            const currentStateButtonId = stateButtonIdMap[data.state];
-            if (currentStateButtonId) {
-                document.getElementById(currentStateButtonId)?.classList.add('active');
-            }
-        }
-    });
+function highlightCurrentStateButton(currentState, buttonIds) {
+    // Correctly pass the specific array of button IDs to remove the 'active' class
+    removeActiveClass(buttonIds);
+    
+    // Get button ID for current state
+    const currentButtonId = currentState;
+    
+    // Add 'active' class to current state button
+    const currentButton = document.getElementById(currentButtonId);
+    if (currentButton) currentButton.classList.add('active');
+}
 
-    onSnapshot(doc(db, "liveUtils", "rotationStatus"), (doc) => {
-        const data = doc.data();
-        if (data && data.state) {
-            // First, remove active class from all buttons
-            document.querySelectorAll('.button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+// Adjusted Firestore listeners to pass the correct button IDs array
+onSnapshot(doc(db, "liveUtils", "liveStatus"), (doc) => {
+    const data = doc.data();
+    if (data && data.state) {
+        const liveButtonIds = [
+            'live',
+            'intermission',
+            'rotation',
+            'off',
+    ]   ;
+        highlightCurrentStateButton(data.state, liveButtonIds);
+    }
+});
 
-            // Then, apply the active class to the corresponding button
-            const stateButtonIdMap = {
-                'init': 'initRotate',
-                'choosing': 'choosing',
-                'chosen': 'chosen'
-            };
-            const currentStateButtonId = stateButtonIdMap[data.state];
-            if (currentStateButtonId) {
-                document.getElementById(currentStateButtonId)?.classList.add('active');
-            }
-        }
-    });
+onSnapshot(doc(db, "liveUtils", "rotationStatus"), (doc) => {
+    const data = doc.data();
+    if (data && data.state) {
+        const rotationButtonIds = [
+            'init',
+            'choosing',
+            'chosen'
+        ];
+        highlightCurrentStateButton(data.state, rotationButtonIds);
+    }
+});
     </script>
 </body>
 </html>
