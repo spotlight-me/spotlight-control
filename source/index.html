@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Panel</title>
+    <!-- Firebase SDK 9+ modular approach -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body>
+    <h2 style="text-align: center;">Spotlight Live Control Panel</h2>
+    <div class="container">
+        <h3>liveStatus</h3>
+        <a href="#" class="button default" id="intermission">Intermission</a>
+        <a href="#" class="button default" id="rotation">Rotation</a>
+        <a href="#" class="button primary" id="live">Live</a>
+        <a href="#" class="button secondary" id="off">Off</a>
+    </div>
+    <div class="container">
+        <h3>rotationStatus</h3>
+        <a href="#" class="button secondary" id="initRotate">Initial Rotation</a>
+        <a href="#" class="button secondary" id="choosing">Force Set Choosing</a>
+        <a href="#" class="button secondary" id="chosen">Force Set Chosen</a>
+    </div>
+    <div class="container">
+        <div id="viewerRotationContainer">
+            <h3>Viewer Rotation</h3>
+            <ul id="viewerRotationList"></ul>
+        </div>
+    </div>
+
+
+
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyA8N1cdRvNMMl6AWFveihoOSCen7UoA3bY",
+          authDomain: "spotlight-b5666.firebaseapp.com",
+          projectId: "spotlight-b5666",
+          storageBucket: "spotlight-b5666.appspot.com",
+          messagingSenderId: "723412961195",
+          appId: "1:723412961195:web:011ef6ccebd86f7db3f4ee",
+          measurementId: "G-1JP2DMR5TD"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        function updateState(docId, state) {
+            setDoc(doc(db, "liveUtils", docId), { state: state })
+                .then(() => {
+                    console.log('State updated to', state);
+                    //alert('State updated to ' + state);
+                })
+                .catch(error => {
+                    console.error('Error updating state:', error);
+                    alert('Error updating state. Check console for details.');
+                });
+        }
+      // Attach event listeners
+      document.getElementById('live').addEventListener('click', () => updateState('liveStatus', 'live'));
+      document.getElementById('intermission').addEventListener('click', () => updateState('liveStatus', 'intermission'));
+      document.getElementById('rotation').addEventListener('click', () => updateState('liveStatus', 'rotation'));
+      document.getElementById('off').addEventListener('click', () => updateState('liveStatus', 'off'));
+
+      // Attach event listeners
+      document.getElementById('initRotate').addEventListener('click', () => updateState('rotationStatus', 'init'));
+      document.getElementById('choosing').addEventListener('click', () => updateState('rotationStatus', 'choosing'));
+      document.getElementById('chosen').addEventListener('click', () => updateState('rotationStatus', 'chosen'));
+
+      const viewerRotationContainer = document.getElementById('viewerRotationList');
+
+    // Function to update UI with viewerRotation array
+    function updateViewerRotationUI(viewerRotation) {
+        // Clear existing viewerRotation list
+        viewerRotationContainer.innerHTML = '';
+
+        // Add each viewerRotation item to the list
+        viewerRotation.slice(0, 3).forEach((viewer, index) => {
+            let li = document.createElement('li');
+            li.textContent = `${index + 1}. ${viewer}`; // Numbering viewers 1-3
+            viewerRotationContainer.appendChild(li);
+        });
+    }
+
+    // Listen for real-time updates
+    onSnapshot(doc(db, "liveUtils", "rotation"), (doc) => {
+        const data = doc.data();
+        if (data && data.viewerRotation) {
+            updateViewerRotationUI(data.viewerRotation);
+        } else {
+            viewerRotationContainer.innerHTML = '<li>No viewers currently in rotation.</li>';
+        }
+    });
+
+    onSnapshot(doc(db, "liveUtils", "liveStatus"), (doc) => {
+        const data = doc.data();
+        if (data && data.state) {
+            // First, remove active class from all buttons
+            document.querySelectorAll('.button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Then, apply the active class to the corresponding button
+            const stateButtonIdMap = {
+                'live': 'live',
+                'intermission': 'intermission',
+                'rotation': 'rotation',
+                'off': 'off'
+            };
+            const currentStateButtonId = stateButtonIdMap[data.state];
+            if (currentStateButtonId) {
+                document.getElementById(currentStateButtonId)?.classList.add('active');
+            }
+        }
+    });
+
+    onSnapshot(doc(db, "liveUtils", "rotationStatus"), (doc) => {
+        const data = doc.data();
+        if (data && data.state) {
+            // First, remove active class from all buttons
+            document.querySelectorAll('.button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Then, apply the active class to the corresponding button
+            const stateButtonIdMap = {
+                'init': 'initRotate',
+                'choosing': 'choosing',
+                'chosen': 'chosen'
+            };
+            const currentStateButtonId = stateButtonIdMap[data.state];
+            if (currentStateButtonId) {
+                document.getElementById(currentStateButtonId)?.classList.add('active');
+            }
+        }
+    });
+    </script>
+</body>
+</html>
