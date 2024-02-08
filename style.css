@@ -1,7 +1,7 @@
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f4; }
-.container { max-width: 600px; margin: auto; margin-bottom: 20px; background: #fff; padding: 1px 20px 20px 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+.container { width: auto; margin: 20px; margin-bottom: 10px; background: #fff; padding: 1px 20px 20px 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
 h2 { color: #333; }
-.btn, .button { display: inline-block; padding: 10px 20px; margin: 5px; border-radius: 5px; background-color: #005A9C; color: white; cursor: pointer; text-decoration: none; }
+.btn, .button { display: inline-block; width: 40%; padding: 5px 10px; margin: 5px; border-radius: 5px; background-color: #005A9C; color: white; cursor: pointer; text-decoration: none; }
 .btn:hover, .button.default:hover { background-color: #007BFF; }
 .button.default { border: 2px solid #3498db; color: #000000; background-color: #fff; }
 .button.primary { border: 2px solid #2ecc71; color: #000000; background-color: #fff; }
@@ -13,7 +13,7 @@ h2 { color: #333; }
     color: white !important;
     border-color: #FF3939 !important;
 }
-
+.containerLive { width: 100%; height: 100vh; position: relative; background-color: #fff; }
 #viewerRotationContainer {
     margin-top: 20px;
 }
@@ -28,5 +28,52 @@ h2 { color: #333; }
     margin: 10px 0;
     padding: 10px;
     border-radius: 5px;
-    box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.384);
+}
+
+.sidePanel {
+    height: 100vh;
+    overflow: hidden;
+    width: 0; /* Panel width when hidden */
+    position: fixed; /* Or absolute, based on your layout */
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #53535349; /* Adjust based on your design */
+    overflow-x: hidden;
+    transition: 0.5s; /* Smooth transitions for opening/closing */
+    padding-top: 60px; /* Adjust based on your content */
+}
+
+.toggleSidePanel {
+    position: fixed;
+    top: 8px; /* Adjust based on your layout */
+    left: 20px;
+    z-index: 2;
+    cursor: pointer;
+    background-color: #04AA6D; /* Adjust based on your design */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 20px;
+}
+.toggleLive {
+    position: fixed;
+    top: 50vh; /* Adjust based on your layout */
+    width: 50;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    cursor: pointer;
+    background-color: #04AA6D; /* Adjust based on your design */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 20px;
+}
+
+/* Add styles to expand the side panel */
+.sidePanel.open {
+    width: 400px; /* Panel width when shown */
 }

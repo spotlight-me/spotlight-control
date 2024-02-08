@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Admin Session</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/assets/spotlightfinalappicon (1).png">
+</head>
+<body>
+    <script>
+         // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { getFirestore, doc, deleteDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyA8N1cdRvNMMl6AWFveihoOSCen7UoA3bY",
+          authDomain: "spotlight-b5666.firebaseapp.com",
+          projectId: "spotlight-b5666",
+          storageBucket: "spotlight-b5666.appspot.com",
+          messagingSenderId: "723412961195",
+          appId: "1:723412961195:web:011ef6ccebd86f7db3f4ee",
+          measurementId: "G-1JP2DMR5TD"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function deleteAdminSessionAndRedirect() {
+            deleteDoc(doc(db, "liveSessions", "adminSession"))
+                .then(() => {
+                    console.log("Document successfully deleted!");
+                    window.location.href = "/"; // Redirect to home or another page
+                })
+                .catch((error) => {
+                    console.error("Error removing document: ", error);
+                    // Handle failure, perhaps redirect to an error page or log more details
+                    window.location.href = "/";
+                });
+        }
+
+        deleteAdminSessionAndRedirect();
+    </script>
+</body>
+</html>
