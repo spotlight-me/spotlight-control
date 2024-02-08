@@ -35,12 +35,12 @@
             deleteDoc(doc(db, "liveSessions", "adminSession"))
                 .then(() => {
                     console.log("Document successfully deleted!");
-                    window.location.href = "/"; // Redirect to home or another page
+                    window.location.href = "/spotlight-control/"; // Redirect to home or another page
                 })
                 .catch((error) => {
                     console.error("Error removing document: ", error);
                     // Handle failure, perhaps redirect to an error page or log more details
-                    window.location.href = "/";
+                    window.location.href = "/spotlight-control/";
                 });
         }
 
