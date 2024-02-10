@@ -48,7 +48,8 @@ h2 { color: #333; }
 .toggleSidePanel {
     position: fixed;
     top: 8px; /* Adjust based on your layout */
-    left: 20px;
+    left: 50%;
+    transform: translate(-50%, 0);
     z-index: 2;
     cursor: pointer;
     background-color: #04AA6D; /* Adjust based on your design */

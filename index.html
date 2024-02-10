@@ -17,16 +17,16 @@
         
         <div class="container">
             <h3>liveStatus</h3>
-            <a href="#" class="button default" id="intermission">Intermission</a>
-            <a href="#" class="button default" id="rotation">Rotation</a>
-            <a href="#" class="button primary" id="live">Live</a>
-            <a href="#" class="button secondary" id="off">Off</a>
+            <a class="button default" id="intermission">Intermission</a>
+            <a class="button default" id="rotation">Rotation</a>
+            <a class="button primary" id="live">Live</a>
+            <a class="button secondary" id="off">Off</a>
         </div>
         <div class="container">
             <h3>rotationStatus</h3>
-            <a href="#" class="button secondary" id="init">Initial Rotation</a>
-            <a href="#" class="button secondary" id="choosing">Choosing</a>
-            <a href="#" class="button secondary" id="chosen">Chosen</a>
+            <a class="button secondary" id="init">Initial Rotation</a>
+            <a class="button secondary" id="choosing">Choosing</a>
+            <a class="button secondary" id="chosen">Chosen</a>
         </div>
         <div class="container">
             <div id="viewerRotationContainer">
@@ -39,7 +39,7 @@
     <div id="meeting-container-id"></div>
     <button id="toggleSidePanel" class="toggleSidePanel">☰</button>
     
-    <button id="toggleLive" class="toggleLive">Begin Live</button>
+    <button id="toggleLive" disabled= true class="toggleLive">Awaiting Admin to begin live from app...</button>
 
     <script src="https://sdk.videosdk.live/rtc-js-prebuilt/0.3.37/rtc-js-prebuilt.js"></script>
     <script type="module" src="main.js"></script>

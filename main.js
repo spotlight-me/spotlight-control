@@ -167,15 +167,15 @@
             apiKey: "5209fb7b-f82e-4a0d-ba86-7889321fcb24", // generated from app.videosdk.live
             meetingId: meeID, // enter your meeting id
 
-            micEnabled: false,
-            webcamEnabled: false,
-            participantCanToggleSelfWebcam: false,
-            participantCanToggleSelfMic: false,
+            micEnabled: true,
+            webcamEnabled: true,
+            participantCanToggleSelfWebcam: true,
+            participantCanToggleSelfMic: true,
             participantCanLeave: true, // if false, leave button won't be visible
 
             chatEnabled: true,
-            screenShareEnabled: true,
-            pollEnabled: true,
+            screenShareEnabled: false,
+            pollEnabled: false,
             whiteboardEnabled: false,
             raiseHandEnabled: false,
             mode: "CONFERENCE",  // || CONFERENCE
@@ -188,8 +188,8 @@
             // },
 
             livestream: {
-                autoStart: true,
-                enabled: true,
+                autoStart: false,
+                enabled: false,
             },
 
             hls: {
@@ -204,9 +204,9 @@
             },
 
             branding: {
-                enabled: false,
+                enabled: true,
                 logoURL:
-                "assets\spotlightfinalappicon (1).png",
+                "https://spotlight-me.github.io/spotlight-control/assets/spotlightfinalappicon (1).png",
                 name: "Spotlight Control",
                 poweredBy: false,
             },
@@ -216,15 +216,15 @@
                 askToJoin: false, // Ask joined participants for entry in meeting
                 toggleParticipantMic: true, // Can toggle other participant's mic
                 toggleParticipantWebcam: true, // Can toggle other participant's webcam
-                toggleParticipantScreenshare: true, // Can toggle other partcipant's screen share
+                toggleParticipantScreenshare: false, // Can toggle other partcipant's screen share
                 toggleParticipantMode: true, // Can toggle other participant's mode
-                canCreatePoll: true, // Can create a poll
+                canCreatePoll: false, // Can create a poll
                 toggleHls: true, // Can toggle Start HLS button
                 drawOnWhiteboard: true, // Can draw on whiteboard
                 toggleWhiteboard: true, // Can toggle whiteboard
                 toggleVirtualBackground: true, // Can toggle virtual background
                 toggleRecording: true, // Can toggle meeting recording
-                toggleLivestream: true, //can toggle live stream
+                toggleLivestream: false, //can toggle live stream
                 removeParticipant: true, // Can remove participant
                 endMeeting: true, // Can end meeting
                 changeLayout: true, //can change layout
