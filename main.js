@@ -1,6 +1,6 @@
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, Timestamp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
         
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -33,6 +33,7 @@
       document.getElementById('intermission').addEventListener('click', () => updateState('liveStatus', 'intermission'));
       document.getElementById('rotation').addEventListener('click', () => updateState('liveStatus', 'rotation'));
       document.getElementById('off').addEventListener('click', () => updateState('liveStatus', 'off'));
+      document.getElementById('ended').addEventListener('click', () => updateState('liveStatus', 'ended'));
 
       // Attach event listeners
       document.getElementById('init').addEventListener('click', () => updateState('rotationStatus', 'init'));
@@ -109,6 +110,7 @@
                 'intermission',
                 'rotation',
                 'off',
+                'ended',
         ]   ;
             highlightCurrentStateButton(data.state, liveButtonIds);
         }
@@ -154,103 +156,225 @@
             highlightCurrentStateButton(data.state, rotationButtonIds);
         }
     });
+    let participants = []; 
+    const mockParticipants = new Map([
+        ['user1', { id: 'user1', name: 'Alice', mode: 'VIEWER' }],
+        ['user2', { id: 'user2', name: 'Bob', mode: 'VIEWER' }],
+        ['user3', { id: 'user3', name: 'Charlie', mode: 'VIEWER' }],
+        ['user4', { id: 'user4', name: 'Diana', mode: 'VIEWER' }],
+        ['user5', { id: 'user5', name: 'Ethan', mode: 'VIEWER' }],
+        ['user6', { id: 'user6', name: 'Fiona', mode: 'VIEWER' }],
+        ['user7', { id: 'user7', name: 'George', mode: 'VIEWER' }],
+        ['user8', { id: 'user8', name: 'Hannah', mode: 'VIEWER' }],
+        ['user9', { id: 'user9', name: 'Ian', mode: 'VIEWER' }],
+        ['user10', { id: 'user10', name: 'Julia', mode: 'VIEWER' }],
+        ['user11', { id: 'user11', name: 'Kevin', mode: 'VIEWER' }],
+        ['user12', { id: 'user12', name: 'Luna', mode: 'VIEWER' }],
+        ['user13', { id: 'user13', name: 'Mason', mode: 'VIEWER' }],
+        ['user14', { id: 'user14', name: 'Nora', mode: 'VIEWER' }],
+        ['user15', { id: 'user15', name: 'Oscar', mode: 'VIEWER' }],
+        ['user16', { id: 'user16', name: 'Pamela', mode: 'VIEWER' }],
+        ['user17', { id: 'user17', name: 'Quincy', mode: 'VIEWER' }],
+        ['user18', { id: 'user18', name: 'Rachel', mode: 'VIEWER' }],
+        ['user19', { id: 'user19', name: 'Steve', mode: 'VIEWER' }],
+        ['user20', { id: 'user20', name: 'Tina', mode: 'VIEWER' }],
+    ]);
+
+    let prevLiveStatusRef = "";
+    onSnapshot(doc(db, "liveUtils", "liveStatus"), (doc) => {
+        const data = doc.data();
+        if (data) {
+            if (prevLiveStatusRef === "rotation" && data.state === "live") {
+                setServerStartTime();
+                rotateViewers();
+                // setTimeout(async () => {
+                //   await rotateViewers();
+                // }, 15000);
+              }
+              if (prevLiveStatusRef === "rotation" && data.state === "off") {
+                setServerStartTime();
+                rotateViewersEnd();
+                // setTimeout(async () => {
+                //     await rotateViewersEnd();
+                // }, 15000);
+              }
+              prevLiveStatusRef = data.state;
+        }
+    });
+    // Function to set the current time as serverStartTime
+    const setServerStartTime = async () => {
+        const currentTime = Timestamp.now();
+    
+        try {
+            await updateDoc(doc(db, 'liveUtils', 'timestamp'), {
+                serverStartTime: currentTime
+            });
+    
+            console.log('Server start time set successfully');
+        } catch (error) {
+            console.error('Error setting server start time:', error);
+        }
+    };
+    
+    async function rotateViewers() {
+        //const viewers = participants.filter(participant => participant.mode === "VIEWER");
+        const viewers = Array.from(mockParticipants.values()).filter(participant => participant.mode === "VIEWER");
+        const rotationRef = doc(db, 'liveUtils', 'rotation');
+        const rotationDoc = await getDoc(rotationRef);
+        let currentRotation = rotationDoc.exists() ? rotationDoc.data().viewerRotation : [];
+        // Remove the first viewer (viewer number 1)
+        if (currentRotation.length > 0) {
+            currentRotation.shift();
+        }
+        while (currentRotation.length < 3 && viewers.length > 0) {
+            const randomIndex = Math.floor(Math.random() * viewers.length);
+            const newViewer = viewers[randomIndex];
+
+            // Ensure the new viewer is not already in the rotation
+            if (!currentRotation.includes(newViewer.id)) {
+                currentRotation.push(newViewer.id);
+                
+                // If the rotation reaches 3 viewers, break the loop
+                if (currentRotation.length === 3) break;
+            }
+            // Remove the selected viewer from the viewers array and try again
+            viewers.splice(randomIndex, 1);
+        }
+        // If the current rotation length exceeds 3, trim it down to 3
+        if (currentRotation.length > 3) {
+            currentRotation = currentRotation.slice(0, 3);
+        }
+
+        // Update Firestore with the new rotation
+        await setDoc(doc(db, "liveUtils", "rotation"), {
+            viewerRotation: currentRotation
+        });
+        console.log(currentRotation);
+        return currentRotation;
+      }
+      
+      async function rotateViewersEnd() {
+        // Reference to the 'rotation' document in 'liveUtils' collection
+        const rotationRef = doc(db, 'liveUtils', 'rotation');
+        
+        try {
+          // Get the current viewer rotation from Firestore
+          const rotationDoc = await getDoc(rotationRef);
+          let currentRotation = rotationDoc.exists() ? rotationDoc.data().viewerRotation : [];
+          
+          // Remove the first viewer (viewer number 1)
+          if (currentRotation.length > 0) {
+            currentRotation.shift();
+          }
+          
+          // Update the rotation in Firestore
+          await setDoc(rotationRef, { viewerRotation: currentRotation });
+          
+          console.log("Viewer rotation updated successfully:", currentRotation);
+          return currentRotation;
+        } catch (error) {
+          console.error("Error updating viewer rotation:", error);
+        }
+      }
+
+
         let meeID = "";
-        onSnapshot(doc(db, "liveSessions", "adminSession"), (doc) => {
+                onSnapshot(doc(db, "liveSessions", "adminSession"), (doc) => {
             const data = doc.data();
             if (data && data.meetingId) {
                 meeID = data.meetingId;
 
                 const meeting = new VideoSDKMeeting();
+                
+                meeting.init({
+                    name: "Admin",
+                    apiKey: "5209fb7b-f82e-4a0d-ba86-7889321fcb24", // generated from app.videosdk.live
+                    meetingId: meeID, 
 
-        meeting.init({
-            name: "Admin",
-            apiKey: "5209fb7b-f82e-4a0d-ba86-7889321fcb24", // generated from app.videosdk.live
-            meetingId: meeID, // enter your meeting id
+                    micEnabled: true,
+                    webcamEnabled: true,
+                    participantCanToggleSelfWebcam: true,
+                    participantCanToggleSelfMic: true,
+                    participantCanLeave: true, // if false, leave button won't be visible
 
-            micEnabled: true,
-            webcamEnabled: true,
-            participantCanToggleSelfWebcam: true,
-            participantCanToggleSelfMic: true,
-            participantCanLeave: true, // if false, leave button won't be visible
+                    chatEnabled: true,
+                    screenShareEnabled: false,
+                    pollEnabled: false,
+                    whiteboardEnabled: false,
+                    raiseHandEnabled: false,
+                    mode: "CONFERENCE",  // || CONFERENCE
 
-            chatEnabled: true,
-            screenShareEnabled: false,
-            pollEnabled: false,
-            whiteboardEnabled: false,
-            raiseHandEnabled: false,
-            mode: "CONFERENCE",  // || CONFERENCE
+                    // recording: {
+                    //     autoStart: true, // auto start recording on participant joined
+                    //     enabled: true,
+                    //     webhookUrl: "https://www.videosdk.live/callback",
+                    //     awsDirPath: `/meeting-recordings/${meetingId}/`, // automatically save recording in this s3 path
+                    // },
+                    
+                    livestream: {
+                        autoStart: false,
+                        enabled: false,
+                    },
 
-            // recording: {
-            //     autoStart: true, // auto start recording on participant joined
-            //     enabled: true,
-            //     webhookUrl: "https://www.videosdk.live/callback",
-            //     awsDirPath: `/meeting-recordings/${meetingId}/`, // automatically save recording in this s3 path
-            // },
+                    hls: {
+                        enabled: true,
+                        autoStart: false,
+                    },
 
-            livestream: {
-                autoStart: false,
-                enabled: false,
-            },
+                    layout: {
+                        type: "SPOTLIGHT", // "SPOTLIGHT" | "SIDEBAR" | "GRID"
+                        priority: "SPEAKER", // "SPEAKER" | "PIN",
+                        // gridSize: 3,
+                    },
 
-            hls: {
-                enabled: true,
-                autoStart: false,
-            },
+                    branding: {
+                        enabled: true,
+                        logoURL:
+                        "https://spotlight-me.github.io/spotlight-control/assets/spotlightfinalappicon (1).png",
+                        name: "Spotlight Control",
+                        poweredBy: false,
+                    },
 
-            layout: {
-                type: "SPOTLIGHT", // "SPOTLIGHT" | "SIDEBAR" | "GRID"
-                priority: "SPEAKER", // "SPEAKER" | "PIN",
-                // gridSize: 3,
-            },
+                    permissions: {
+                        pin: false,
+                        askToJoin: false, // Ask joined participants for entry in meeting
+                        toggleParticipantMic: true, // Can toggle other participant's mic
+                        toggleParticipantWebcam: true, // Can toggle other participant's webcam
+                        toggleParticipantScreenshare: false, // Can toggle other partcipant's screen share
+                        toggleParticipantMode: true, // Can toggle other participant's mode
+                        canCreatePoll: false, // Can create a poll
+                        toggleHls: true, // Can toggle Start HLS button
+                        drawOnWhiteboard: true, // Can draw on whiteboard
+                        toggleWhiteboard: true, // Can toggle whiteboard
+                        toggleVirtualBackground: true, // Can toggle virtual background
+                        toggleRecording: true, // Can toggle meeting recording
+                        toggleLivestream: false, //can toggle live stream
+                        removeParticipant: true, // Can remove participant
+                        endMeeting: true, // Can end meeting
+                        changeLayout: true, //can change layout
+                    },
 
-            branding: {
-                enabled: true,
-                logoURL:
-                "https://spotlight-me.github.io/spotlight-control/assets/spotlightfinalappicon (1).png",
-                name: "Spotlight Control",
-                poweredBy: false,
-            },
+                    joinScreen: {
+                        visible: true, // Show the join screen ?
+                        title: "Spotlight Live", // Meeting title
+                        meetingUrl: meeID, // Meeting joining url
+                    },
 
-            permissions: {
-                pin: false,
-                askToJoin: false, // Ask joined participants for entry in meeting
-                toggleParticipantMic: true, // Can toggle other participant's mic
-                toggleParticipantWebcam: true, // Can toggle other participant's webcam
-                toggleParticipantScreenshare: false, // Can toggle other partcipant's screen share
-                toggleParticipantMode: true, // Can toggle other participant's mode
-                canCreatePoll: false, // Can create a poll
-                toggleHls: true, // Can toggle Start HLS button
-                drawOnWhiteboard: true, // Can draw on whiteboard
-                toggleWhiteboard: true, // Can toggle whiteboard
-                toggleVirtualBackground: true, // Can toggle virtual background
-                toggleRecording: true, // Can toggle meeting recording
-                toggleLivestream: false, //can toggle live stream
-                removeParticipant: true, // Can remove participant
-                endMeeting: true, // Can end meeting
-                changeLayout: true, //can change layout
-            },
+                    leftScreen: {
+                        // visible when redirect on leave not provieded
+                        actionButton: {
+                        // optional action button
+                        label: "Shutdown Session", // action button label
+                        href: "https://spotlight-me.github.io/spotlight-control/deleteAdminSession.html", // action button href
+                        },
+                    },
 
-            joinScreen: {
-                visible: true, // Show the join screen ?
-                title: "Spotlight Live", // Meeting title
-                meetingUrl: meeID, // Meeting joining url
-            },
+                    notificationSoundEnabled: true,
 
-            leftScreen: {
-                // visible when redirect on leave not provieded
-                actionButton: {
-                // optional action button
-                label: "Shutdown Session", // action button label
-                href: "https://spotlight-me.github.io/spotlight-control/deleteAdminSession.html", // action button href
-                },
-            },
+                    debug: true, // pop up error during invalid config or netwrok error
 
-            notificationSoundEnabled: true,
-
-            debug: true, // pop up error during invalid config or netwrok error
-
-            maxResolution: "sd", // "hd" or "sd"
-        });
+                    maxResolution: "sd", // "hd" or "sd"
+                });
             }
         });
 

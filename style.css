@@ -8,6 +8,8 @@ h2 { color: #333; }
 .button.primary:hover { background-color: #2ecc71; color: #fff; }
 .button.secondary { border: 2px solid #e74c3c; color: #000000; background-color: #fff; }
 .button.secondary:hover { background-color: #e74c3c; color: #fff; }
+.button.floater{  margin-left: 50%; transform: translate(-50%, 0); border: 2px solid #ffffff; color: #fff; width: auto; background-color: #ffffff00;}
+.button.floater:hover { background-color: #FF3939; color: #fff; }
 .button.active, .btn.active {
     background-color: #FF3939 !important; /* Using !important to ensure override */
     color: white !important;
