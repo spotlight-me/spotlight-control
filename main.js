@@ -228,7 +228,11 @@
                             updateDoc(liveRef, {
                                 state: 'rotation'
                             }).then(() => {
-                                goToLiveAfterDelay(DELAY);
+                                if (data.state === "off") {
+                                    goToOffAfterDelay(DELAY);
+                                } else {
+                                    goToLiveAfterDelay(DELAY);
+                                }
                                 console.log("Live status set to 'rotation'");
                             }).catch(console.error);
                         }, waitTime);
@@ -276,7 +280,6 @@
                 state: 'live'
             }).then(() => {
                 console.log("Live status set to 'live'");
-                setServerStartTime(); // Set server start time right after going live
             }).catch(console.error);
         }, delay);
     }
@@ -286,7 +289,6 @@
                 state: 'off'
             }).then(() => {
                 console.log("Live status set to 'off'");
-                setServerStartTime(); // Set server start time right after going live
             }).catch(console.error);
         }, delay);
     }
