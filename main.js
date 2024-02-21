@@ -34,6 +34,7 @@
       document.getElementById('rotation').addEventListener('click', () => updateState('liveStatus', 'rotation'));
       document.getElementById('off').addEventListener('click', () => updateState('liveStatus', 'off'));
       document.getElementById('ended').addEventListener('click', () => updateState('liveStatus', 'ended'));
+      document.getElementById('live+').addEventListener('click', () => updateState('liveStatus', 'live+'));
 
       // Attach event listeners
       document.getElementById('init').addEventListener('click', () => updateState('rotationStatus', 'init'));
@@ -111,6 +112,7 @@
                 'rotation',
                 'off',
                 'ended',
+                'live+',
         ]   ;
             highlightCurrentStateButton(data.state, liveButtonIds);
         }
@@ -180,27 +182,74 @@
         ['user20', { id: 'user20', name: 'Tina', mode: 'VIEWER' }],
     ]);
 
+    let extraTime = 1;
+    document.getElementById('live+').addEventListener('click', async () => {
+        extraTime = parseInt(document.getElementById('extraTimeInput').value, 10);
+        if (isNaN(extraTime)) extraTime = 1;
+    });
+    const LIVE_COUNTDOWN = 3;
     let prevLiveStatusRef = "";
-    onSnapshot(doc(db, "liveUtils", "liveStatus"), (doc) => {
+    
+    const DELAY = 5000;
+    const timesRef = doc(db, 'liveUtils', 'timestamp');
+    const liveRef = doc(db, 'liveUtils', 'liveStatus');
+    onSnapshot(doc(db, "liveUtils", "liveStatus"), async (doc) => {
         const data = doc.data();
         if (data) {
-            if (prevLiveStatusRef === "rotation" && data.state === "live") {
+            // rotation -> live = delay time
+            // live -> rotation = serverStartTime
+            if ( data.state === "live+") {
+                // add 1 minute to countdown by adjusting serverstart time
+                await updateDoc(liveRef, {state: 'live'});
+                const timestampDoc = await getDoc(timesRef);
+                if (timestampDoc.exists()) {
+                    let serverStartTime = timestampDoc.data().serverStartTime.toMillis();
+                    let newServerStartTime = new Date(serverStartTime + (extraTime * 60 * 1000)); // Subtract extra time to extend countdown
+                    
+                    // Update server start time to extend the countdown
+                    await updateDoc(timesRef, {
+                        serverStartTime: newServerStartTime
+                    });
+                }
+            }
+            if (prevLiveStatusRef === "intermission" && data.state === "live") { setServerStartTime(); }
+            if (prevLiveStatusRef === "rotation" && ( data.state === "live" || data.state === "off")) {
                 setServerStartTime();
-                rotateViewers();
-                // setTimeout(async () => {
-                //   await rotateViewers();
-                // }, 15000);
-              }
-              if (prevLiveStatusRef === "rotation" && data.state === "off") {
-                setServerStartTime();
-                rotateViewersEnd();
-                // setTimeout(async () => {
-                //     await rotateViewersEnd();
-                // }, 15000);
+                // Wait for 3 minutes after server start time, then change state to "rotation"
+                const timestampDoc = await getDoc(timesRef);
+                if (timestampDoc.exists()) {
+                    const serverStartTime = timestampDoc.data().serverStartTime;
+                    const delayUntilRotation = LIVE_COUNTDOWN * 60 * 1000; // 3 minutes in milliseconds: Allow for vote extension 
+                    const currentTime = Date.now();
+                    const waitTime = serverStartTime.toMillis() + delayUntilRotation - currentTime;
+                    console.log(waitTime);
+                    if (waitTime > 0) {
+                        setTimeout(() => {
+                            updateDoc(liveRef, {
+                                state: 'rotation'
+                            }).then(() => {
+                                goToLiveAfterDelay(DELAY);
+                                console.log("Live status set to 'rotation'");
+                            }).catch(console.error);
+                        }, waitTime);
+                    }
+                }
+                if (data.state === "off") {
+                    rotateViewersEnd();
+                    // setTimeout(async () => {
+                    //     await rotateViewersEnd();
+                    // }, 15000);
+                } else if (data.state === "live") {
+                    rotateViewers();
+                    // setTimeout(async () => {
+                    //   await rotateViewers();
+                    // }, 15000);
+                }
               }
               prevLiveStatusRef = data.state;
         }
     });
+
     // Function to set the current time as serverStartTime
     const setServerStartTime = async () => {
         const currentTime = Timestamp.now();
@@ -217,41 +266,31 @@
     };
     
     async function rotateViewers() {
-        //const viewers = participants.filter(participant => participant.mode === "VIEWER");
-        const viewers = Array.from(mockParticipants.values()).filter(participant => participant.mode === "VIEWER");
-        const rotationRef = doc(db, 'liveUtils', 'rotation');
-        const rotationDoc = await getDoc(rotationRef);
-        let currentRotation = rotationDoc.exists() ? rotationDoc.data().viewerRotation : [];
-        // Remove the first viewer (viewer number 1)
-        if (currentRotation.length > 0) {
-            currentRotation.shift();
-        }
-        while (currentRotation.length < 3 && viewers.length > 0) {
-            const randomIndex = Math.floor(Math.random() * viewers.length);
-            const newViewer = viewers[randomIndex];
-
-            // Ensure the new viewer is not already in the rotation
-            if (!currentRotation.includes(newViewer.id)) {
-                currentRotation.push(newViewer.id);
-                
-                // If the rotation reaches 3 viewers, break the loop
-                if (currentRotation.length === 3) break;
-            }
-            // Remove the selected viewer from the viewers array and try again
-            viewers.splice(randomIndex, 1);
-        }
-        // If the current rotation length exceeds 3, trim it down to 3
-        if (currentRotation.length > 3) {
-            currentRotation = currentRotation.slice(0, 3);
-        }
-
-        // Update Firestore with the new rotation
-        await setDoc(doc(db, "liveUtils", "rotation"), {
-            viewerRotation: currentRotation
-        });
-        console.log(currentRotation);
-        return currentRotation;
+        updateState('liveStatus', 'rotateViewerRequest');
       }
+
+    // Step 1: Function to transition from "rotation" to "live" after a delay
+    function goToLiveAfterDelay(delay) {
+        setTimeout(() => {
+            updateDoc(doc(db, 'liveUtils', 'liveStatus'), {
+                state: 'live'
+            }).then(() => {
+                console.log("Live status set to 'live'");
+                setServerStartTime(); // Set server start time right after going live
+            }).catch(console.error);
+        }, delay);
+    }
+    function goToOffAfterDelay(delay) {
+        setTimeout(() => {
+            updateDoc(doc(db, 'liveUtils', 'liveStatus'), {
+                state: 'off'
+            }).then(() => {
+                console.log("Live status set to 'off'");
+                setServerStartTime(); // Set server start time right after going live
+            }).catch(console.error);
+        }, delay);
+    }
+
       
       async function rotateViewersEnd() {
         // Reference to the 'rotation' document in 'liveUtils' collection
@@ -279,7 +318,7 @@
 
 
         let meeID = "";
-                onSnapshot(doc(db, "liveSessions", "adminSession"), (doc) => {
+        onSnapshot(doc(db, "liveSessions", "adminSession"), (doc) => {
             const data = doc.data();
             if (data && data.meetingId) {
                 meeID = data.meetingId;
@@ -377,5 +416,3 @@
                 });
             }
         });
-
-        
